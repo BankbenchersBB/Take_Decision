@@ -1,0 +1,1253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Salary Dashboard</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: #f5f6f8;
+        color: #1a1d23;
+        font-family: "IBM Plex Sans", sans-serif;
+        font-size: 14px;
+        min-height: 100vh;
+      }
+
+      .nav {
+        background: #fff;
+        border-bottom: 1px solid #e4e6eb;
+        padding: 0 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 56px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .nav-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1a1d23;
+      }
+      .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .nav-right input {
+        border: 1px solid #dde0e7;
+        background: #f5f6f8;
+        border-radius: 6px;
+        padding: 7px 12px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+        color: #1a1d23;
+        width: 280px;
+        transition: border 0.15s;
+      }
+      .nav-right input:focus {
+        outline: none;
+        border-color: #3b6ef5;
+        background: #fff;
+      }
+      .btn {
+        background: #3b6ef5;
+        color: #fff;
+        border: none;
+        padding: 7px 16px;
+        border-radius: 6px;
+        font-family: "IBM Plex Sans", sans-serif;
+        font-weight: 500;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .btn:hover {
+        background: #2d5ee0;
+      }
+      .btn-ghost {
+        background: #fff;
+        color: #6b7280;
+        border: 1px solid #dde0e7;
+      }
+      .btn-ghost:hover {
+        background: #f5f6f8;
+        color: #1a1d23;
+      }
+
+      .page {
+        padding: 24px 28px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: #9199a8;
+        margin-bottom: 18px;
+      }
+      .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #d1d5db;
+      }
+      .dot.live {
+        background: #22c55e;
+      }
+
+      /* TABS */
+      .emp-tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        background: #fff;
+        border: 1px solid #e4e6eb;
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      .tab {
+        padding: 6px 14px;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        color: #6b7280;
+        transition: all 0.15s;
+        background: transparent;
+      }
+      .tab:hover {
+        background: #f5f6f8;
+        color: #1a1d23;
+      }
+      .tab.active {
+        background: #3b6ef5;
+        color: #fff;
+      }
+
+      /* OVERVIEW CARDS */
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #e4e6eb;
+        border-radius: 10px;
+        padding: 18px 20px;
+        position: relative;
+      }
+      .card-label {
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #9199a8;
+        margin-bottom: 8px;
+      }
+      .card-value {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 26px;
+        font-weight: 500;
+        color: #1a1d23;
+      }
+      .card.ctc .card-value {
+        color: #3b6ef5;
+      }
+      .card.gross .card-value {
+        color: #0ea16a;
+      }
+      .card-diff {
+        font-size: 12px;
+        color: #9199a8;
+        margin-top: 5px;
+      }
+      .up {
+        color: #0ea16a;
+      }
+      .dn {
+        color: #ef4444;
+      }
+      .best-tag {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        background: #ecfdf5;
+        color: #0ea16a;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 20px;
+        border: 1px solid #bbf7d0;
+        display: none;
+      }
+
+      /* MAIN LAYOUT */
+      .main-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 18px;
+        align-items: start;
+      }
+      .panel {
+        background: #fff;
+        border: 1px solid #e4e6eb;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .panel-head {
+        padding: 13px 18px;
+        border-bottom: 1px solid #e4e6eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .panel-title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        color: #9199a8;
+      }
+
+      /* TABLE */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      thead th {
+        padding: 9px 16px;
+        text-align: right;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #9199a8;
+        background: #fafbfc;
+        border-bottom: 1px solid #e4e6eb;
+      }
+      thead th:first-child {
+        text-align: left;
+      }
+      tbody tr {
+        border-bottom: 1px solid #f0f2f5;
+        cursor: pointer;
+        transition: background 0.1s;
+      }
+      tbody tr:hover {
+        background: #f5f7ff;
+      }
+      tbody tr.active-row {
+        background: #eff4ff;
+      }
+      tbody tr:last-child {
+        border-bottom: none;
+      }
+      td {
+        padding: 10px 16px;
+        text-align: right;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 13px;
+        color: #374151;
+      }
+      td:first-child {
+        text-align: left;
+        font-family: "IBM Plex Sans", sans-serif;
+        font-weight: 500;
+        color: #1a1d23;
+        font-size: 13px;
+      }
+      .c-cur {
+        color: #9199a8;
+      }
+      .c-ctc {
+        color: #3b6ef5;
+      }
+      .c-grs {
+        color: #0ea16a;
+      }
+
+      /* DETAIL VIEW inside left panel */
+      .detail-body {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .detail-col {
+        padding: 14px 16px;
+        border-right: 1px solid #f0f2f5;
+      }
+      .detail-col:last-child {
+        border-right: none;
+      }
+      .detail-col-title {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 10px;
+      }
+      .detail-col-title.cur {
+        color: #9199a8;
+      }
+      .detail-col-title.ctc {
+        color: #3b6ef5;
+      }
+      .detail-col-title.grs {
+        color: #0ea16a;
+      }
+      .drow {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid #f5f6f8;
+        font-size: 12px;
+      }
+      .drow:last-child {
+        border-bottom: none;
+      }
+      .drow .dk {
+        color: #9199a8;
+      }
+      .drow .dv {
+        font-family: "IBM Plex Mono", monospace;
+        font-weight: 500;
+      }
+      .verdict {
+        padding: 10px 16px;
+        border-top: 1px solid #f0f2f5;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .verdict.ctc-w {
+        background: #eff4ff;
+        color: #3b6ef5;
+      }
+      .verdict.grs-w {
+        background: #ecfdf5;
+        color: #0ea16a;
+      }
+      .verdict.tied {
+        background: #fffbeb;
+        color: #b45309;
+      }
+      .close-x {
+        background: none;
+        border: 1px solid #e4e6eb;
+        border-radius: 6px;
+        width: 26px;
+        height: 26px;
+        cursor: pointer;
+        color: #9199a8;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        flex-shrink: 0;
+      }
+      .close-x:hover {
+        border-color: #ef4444;
+        color: #ef4444;
+      }
+
+      /* CHARTS */
+      .charts-col {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .chart-box {
+        padding: 14px 16px;
+        height: 200px;
+      }
+
+      /* WHICH STRUCTURE WINS */
+      .wins-section {
+        margin-bottom: 18px;
+      }
+      .section-title-row {
+        margin-bottom: 12px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1a1d23;
+      }
+
+      /* Overall verdict banner */
+      .overall-verdict {
+        background: #fff;
+        border: 1px solid #e4e6eb;
+        border-radius: 10px;
+        padding: 16px 20px;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+      }
+      .ov-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+      .ov-icon.ctc {
+        background: #eff4ff;
+      }
+      .ov-icon.grs {
+        background: #ecfdf5;
+      }
+      .ov-icon.tie {
+        background: #fffbeb;
+      }
+      .ov-text-main {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .ov-text-main.ctc {
+        color: #3b6ef5;
+      }
+      .ov-text-main.grs {
+        color: #0ea16a;
+      }
+      .ov-text-main.tie {
+        color: #b45309;
+      }
+      .ov-text-sub {
+        font-size: 12px;
+        color: #6b7280;
+        line-height: 1.5;
+      }
+
+      /* 4 metric cards */
+      .wins-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+      .win-card {
+        background: #fff;
+        border: 1px solid #e4e6eb;
+        border-radius: 10px;
+        padding: 16px 18px;
+      }
+      .win-card-label {
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        color: #9199a8;
+        margin-bottom: 8px;
+      }
+      .win-card-winner {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      .win-card-winner.ctc {
+        color: #3b6ef5;
+      }
+      .win-card-winner.grs {
+        color: #0ea16a;
+      }
+      .win-card-winner.tie {
+        color: #b45309;
+      }
+      .win-card-vals {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        padding-top: 8px;
+        border-top: 1px solid #f0f2f5;
+      }
+      .win-val-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+      }
+      .win-val-row .wk {
+        color: #9199a8;
+      }
+      .win-val-row .wv {
+        font-family: "IBM Plex Mono", monospace;
+        font-weight: 500;
+        font-size: 12px;
+      }
+      .win-val-row .wv.ctc {
+        color: #3b6ef5;
+      }
+      .win-val-row .wv.grs {
+        color: #0ea16a;
+      }
+
+      .empty-msg {
+        padding: 32px;
+        text-align: center;
+        color: #b0b6c2;
+        font-size: 13px;
+      }
+
+      @media (max-width: 1000px) {
+        .main-layout {
+          grid-template-columns: 1fr;
+        }
+        .wins-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 600px) {
+        .cards {
+          grid-template-columns: 1fr;
+        }
+        .wins-grid {
+          grid-template-columns: 1fr;
+        }
+        .page {
+          padding: 14px 16px;
+        }
+        .nav {
+          padding: 0 16px;
+        }
+        .nav-right input {
+          width: 140px;
+          font-size: 11px;
+        }
+        .detail-body {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="nav">
+      <div class="nav-title">Salary Dashboard</div>
+      <div class="nav-right">
+        <input
+          type="text"
+          id="sheetId"
+          placeholder="Paste Google Sheet ID..."
+        />
+        <button class="btn" onclick="loadSheet()">Load</button>
+        <button class="btn btn-ghost" onclick="loadDemo()">Demo</button>
+      </div>
+    </div>
+
+    <div class="page">
+      <div class="status">
+        <div class="dot" id="dot"></div>
+        <span id="statusMsg"
+          >Paste your Google Sheet ID above, or click Demo</span
+        >
+      </div>
+
+      <!-- EMPLOYEE TABS -->
+      <div class="emp-tabs" id="empTabs">
+        <div class="tab active" onclick="selectEmp('ALL')">All</div>
+      </div>
+
+      <!-- TOP 3 SUMMARY CARDS -->
+      <div class="cards">
+        <div class="card">
+          <div class="card-label">Current Monthly Total</div>
+          <div class="card-value" id="ov0">—</div>
+          <div class="card-diff" id="od0">Load data to begin</div>
+        </div>
+        <div class="card ctc">
+          <div class="card-label">New — As per CTC</div>
+          <div class="card-value" id="ov1">—</div>
+          <div class="card-diff" id="od1">vs Current</div>
+          <div class="best-tag" id="bt1">✓ Best</div>
+        </div>
+        <div class="card gross">
+          <div class="card-label">New — As per Gross</div>
+          <div class="card-value" id="ov2">—</div>
+          <div class="card-diff" id="od2">vs Current</div>
+          <div class="best-tag" id="bt2">✓ Best</div>
+        </div>
+      </div>
+
+      <!-- MAIN: Left panel (table/detail) + Right charts -->
+      <div class="main-layout">
+        <!-- LEFT PANEL: shows table normally, detail on employee click -->
+        <div class="panel" id="leftPanel">
+          <!-- TABLE VIEW -->
+          <div id="tableView">
+            <div class="panel-head">
+              <div class="panel-title">Employee Breakdown</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Current</th>
+                  <th>New CTC</th>
+                  <th>New Gross</th>
+                </tr>
+              </thead>
+              <tbody id="tbody">
+                <tr>
+                  <td colspan="4">
+                    <div class="empty-msg">No data loaded</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- DETAIL VIEW: visible when employee clicked -->
+          <div id="detailView" style="display: none">
+            <div class="panel-head">
+              <div class="panel-title" id="detailName">—</div>
+              <button
+                class="close-x"
+                onclick="closeDetail()"
+                title="Back to All"
+              >
+                ✕
+              </button>
+            </div>
+            <div class="detail-body" id="detailBody"></div>
+            <div class="verdict" id="detailVerdict"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: 3 charts stacked -->
+        <div class="charts-col">
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Monthly Comparison</div>
+            </div>
+            <div class="chart-box"><canvas id="chart1"></canvas></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Annual CTC</div>
+            </div>
+            <div class="chart-box"><canvas id="chart2"></canvas></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Take Home</div>
+            </div>
+            <div class="chart-box"><canvas id="chart3"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WHICH STRUCTURE WINS -->
+      <div class="wins-section">
+        <div class="section-title-row">
+          <div class="section-title">Which Structure Wins?</div>
+        </div>
+
+        <!-- OVERALL VERDICT BANNER -->
+        <div class="overall-verdict" id="overallVerdict" style="display: none">
+          <div class="ov-icon" id="ovIcon"></div>
+          <div>
+            <div class="ov-text-main" id="ovMain">—</div>
+            <div class="ov-text-sub" id="ovSub">—</div>
+          </div>
+        </div>
+
+        <!-- 4 METRIC CARDS -->
+        <div class="wins-grid" id="winsGrid">
+          <div
+            class="empty-msg"
+            style="
+              grid-column: 1/-1;
+              background: #fff;
+              border: 1px solid #e4e6eb;
+              border-radius: 10px;
+            "
+          >
+            Load data to see verdict
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let allData = [],
+        selectedEmp = "ALL",
+        c1,
+        c2,
+        c3;
+      const fmt = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
+      const fmtK = (n) => "₹" + (Number(n || 0) / 1000).toFixed(1) + "K";
+
+      /* ── DEMO DATA ── */
+      function loadDemo() {
+        allData = [
+          {
+            name: "Vishwa Gami",
+            cur: { ctc: 354000, gross: 324319, take: 300319, monthly: 25027 },
+            newCtc: {
+              ctc: 354000,
+              gross: 324594,
+              take: 300594,
+              monthly: 25050,
+            },
+            newGross: {
+              ctc: 353719,
+              gross: 324319,
+              take: 300319,
+              monthly: 25027,
+            },
+          },
+          {
+            name: "Dhavl",
+            cur: { ctc: 380000, gross: 348000, take: 322000, monthly: 26833 },
+            newCtc: {
+              ctc: 380000,
+              gross: 349200,
+              take: 323000,
+              monthly: 26917,
+            },
+            newGross: {
+              ctc: 378500,
+              gross: 348000,
+              take: 322000,
+              monthly: 26833,
+            },
+          },
+          {
+            name: "Divy",
+            cur: { ctc: 320000, gross: 295000, take: 272000, monthly: 22667 },
+            newCtc: {
+              ctc: 320000,
+              gross: 296500,
+              take: 273000,
+              monthly: 22750,
+            },
+            newGross: {
+              ctc: 319200,
+              gross: 295000,
+              take: 272000,
+              monthly: 22667,
+            },
+          },
+          {
+            name: "Jay",
+            cur: { ctc: 420000, gross: 388000, take: 360000, monthly: 30000 },
+            newCtc: {
+              ctc: 420000,
+              gross: 390000,
+              take: 361500,
+              monthly: 30125,
+            },
+            newGross: {
+              ctc: 418000,
+              gross: 388000,
+              take: 360000,
+              monthly: 30000,
+            },
+          },
+          {
+            name: "Heet",
+            cur: { ctc: 290000, gross: 268000, take: 248000, monthly: 20667 },
+            newCtc: {
+              ctc: 290000,
+              gross: 269000,
+              take: 248800,
+              monthly: 20733,
+            },
+            newGross: {
+              ctc: 289300,
+              gross: 268000,
+              take: 248000,
+              monthly: 20667,
+            },
+          },
+        ];
+        setStatus("Demo loaded — 5 employees", true);
+        render();
+      }
+
+      /* ── LOAD SHEET ── */
+      async function loadSheet() {
+        const id = document.getElementById("sheetId").value.trim();
+        if (!id) return alert("Paste your Google Sheet ID first");
+        setStatus("Loading...", false);
+        try {
+          const res = await fetch(
+            `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=Sheet1`,
+          );
+          if (!res.ok) throw 0;
+          parseCSV(await res.text());
+        } catch {
+          setStatus(
+            "Error: Make sheet public (Anyone with link → Viewer)",
+            false,
+          );
+        }
+      }
+
+      /* ── PARSE CSV ── */
+      function parseCSV(csv) {
+        const rows = csv.split("\n").map((r) => {
+          const cols = [];
+          let cur = "",
+            inQ = false;
+          for (let i = 0; i < r.length; i++) {
+            if (r[i] === '"') {
+              inQ = !inQ;
+            } else if (r[i] === "," && !inQ) {
+              cols.push(cur.trim());
+              cur = "";
+            } else {
+              cur += r[i];
+            }
+          }
+          cols.push(cur.trim());
+          return cols;
+        });
+        allData = [];
+        for (let i = 0; i < rows.length; i++) {
+          const r = rows[i];
+          const name = (r[0] || "").replace(/^"|"$/g, "").trim();
+          if (!name) continue;
+          const bVal = (r[1] || "")
+            .replace(/,/g, "")
+            .replace(/^"|"$/g, "")
+            .trim();
+          if (isNaN(parseFloat(bVal)) || bVal === "") continue;
+          const n = (v) =>
+            parseFloat(
+              (r[v] || "").replace(/^"|"$/g, "").replace(/,/g, "").trim(),
+            ) || 0;
+          allData.push({
+            name,
+            cur: { ctc: n(1), gross: n(2), take: n(3), monthly: n(4) },
+            newCtc: { ctc: n(6), gross: n(7), take: n(8), monthly: n(9) },
+            newGross: { ctc: n(11), gross: n(12), take: n(13), monthly: n(14) },
+          });
+        }
+        if (!allData.length)
+          return setStatus("No data found. Check sheet format.", false);
+        setStatus(`Loaded — ${allData.length} employees`, true);
+        render();
+      }
+
+      /* ── RENDER (ALL view) ── */
+      function render() {
+        const data =
+          selectedEmp === "ALL"
+            ? allData
+            : allData.filter((e) => e.name === selectedEmp);
+        renderTabs();
+        renderCards(data);
+        // Only update table rows + charts when in ALL mode
+        // In individual mode, left panel shows detail, charts show that employee only
+        renderTable(allData); // table always shows full list
+        renderCharts(data); // charts filter by selection
+        renderWins(data);
+      }
+
+      function renderTabs() {
+        const el = document.getElementById("empTabs");
+        el.innerHTML = `<div class="tab ${selectedEmp === "ALL" ? "active" : ""}" onclick="selectEmp('ALL')">All</div>`;
+        allData.forEach((e) => {
+          el.innerHTML += `<div class="tab ${selectedEmp === e.name ? "active" : ""}" onclick="selectEmp('${e.name.replace(/'/g, "\\'")}')">${e.name}</div>`;
+        });
+      }
+
+      /* KEY FIX: selectEmp does NOT call render() when individual selected
+   Instead it directly: updates tabs, updates cards, updates charts, updates wins,
+   shows detail in left panel — WITHOUT destroying/recreating unnecessarily */
+      function selectEmp(name) {
+        selectedEmp = name;
+        renderTabs();
+
+        if (name === "ALL") {
+          // Back to full view
+          closeDetail(); // shows table
+          const data = allData;
+          renderCards(data);
+          renderTable(allData);
+          renderCharts(data);
+          renderWins(data);
+        } else {
+          // Individual employee selected
+          const emp = allData.find((e) => e.name === name);
+          if (!emp) return;
+
+          // Show detail in left panel
+          showDetailPanel(emp);
+
+          // Update cards + charts + wins for this employee only
+          const data = [emp];
+          renderCards(data);
+          renderCharts(data);
+          renderWins(data);
+        }
+      }
+
+      function renderCards(data) {
+        const s = (k) => data.reduce((a, e) => a + e[k].monthly, 0);
+        const cur = s("cur"),
+          ctc = s("newCtc"),
+          grs = s("newGross");
+        document.getElementById("ov0").textContent = fmtK(cur);
+        document.getElementById("ov1").textContent = fmtK(ctc);
+        document.getElementById("ov2").textContent = fmtK(grs);
+        const d1 = ctc - cur,
+          d2 = grs - cur;
+        const p1 = cur ? ((d1 / cur) * 100).toFixed(1) : 0;
+        const p2 = cur ? ((d2 / cur) * 100).toFixed(1) : 0;
+        document.getElementById("od1").innerHTML =
+          `<span class="${d1 >= 0 ? "up" : "dn"}">${d1 >= 0 ? "▲" : "▼"} ${fmtK(Math.abs(d1))} (${Math.abs(p1)}%)</span> vs Current`;
+        document.getElementById("od2").innerHTML =
+          `<span class="${d2 >= 0 ? "up" : "dn"}">${d2 >= 0 ? "▲" : "▼"} ${fmtK(Math.abs(d2))} (${Math.abs(p2)}%)</span> vs Current`;
+        const cTH = data.reduce((a, e) => a + e.newCtc.take, 0),
+          gTH = data.reduce((a, e) => a + e.newGross.take, 0);
+        document.getElementById("bt1").style.display =
+          cTH > gTH ? "block" : "none";
+        document.getElementById("bt2").style.display =
+          gTH > cTH ? "block" : "none";
+      }
+
+      function renderTable(data) {
+        const tb = document.getElementById("tbody");
+        if (!data.length) {
+          tb.innerHTML =
+            '<tr><td colspan="4"><div class="empty-msg">No data</div></td></tr>';
+          return;
+        }
+        tb.innerHTML = data
+          .map(
+            (e) =>
+              `<tr class="${selectedEmp === e.name ? "active-row" : ""}" onclick="selectEmp('${e.name.replace(/'/g, "\\'")}')">
+      <td>${e.name}</td>
+      <td class="c-cur">${fmt(e.cur.monthly)}</td>
+      <td class="c-ctc">${fmt(e.newCtc.monthly)}</td>
+      <td class="c-grs">${fmt(e.newGross.monthly)}</td>
+    </tr>`,
+          )
+          .join("");
+      }
+
+      const cOpts = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: "#9199a8",
+              font: { family: "IBM Plex Sans", size: 10 },
+              boxWidth: 9,
+              padding: 12,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: {
+              color: "#b0b6c2",
+              font: { size: 10 },
+              maxRotation: 35,
+              minRotation: 0,
+            },
+            grid: { color: "#f0f2f5" },
+          },
+          y: {
+            ticks: {
+              color: "#b0b6c2",
+              font: { size: 10 },
+              callback: (v) => "₹" + (v / 1000).toFixed(0) + "K",
+            },
+            grid: { color: "#f0f2f5" },
+          },
+        },
+      };
+      const ds = (label, arr, color) => ({
+        label,
+        data: arr,
+        backgroundColor: color,
+        borderRadius: 3,
+        borderSkipped: false,
+      });
+
+      function renderCharts(data) {
+        const L = data.map((e) => e.name);
+        if (c1) c1.destroy();
+        c1 = new Chart(document.getElementById("chart1"), {
+          type: "bar",
+          data: {
+            labels: L,
+            datasets: [
+              ds(
+                "Current",
+                data.map((e) => e.cur.monthly),
+                "#e5e7eb",
+              ),
+              ds(
+                "New CTC",
+                data.map((e) => e.newCtc.monthly),
+                "#3b6ef5",
+              ),
+              ds(
+                "New Gross",
+                data.map((e) => e.newGross.monthly),
+                "#0ea16a",
+              ),
+            ],
+          },
+          options: { ...cOpts, barPercentage: 0.6, categoryPercentage: 0.65 },
+        });
+
+        if (c2) c2.destroy();
+        c2 = new Chart(document.getElementById("chart2"), {
+          type: "bar",
+          data: {
+            labels: L,
+            datasets: [
+              ds(
+                "Current",
+                data.map((e) => e.cur.ctc),
+                "#e5e7eb",
+              ),
+              ds(
+                "New CTC",
+                data.map((e) => e.newCtc.ctc),
+                "#3b6ef5",
+              ),
+              ds(
+                "New Gross",
+                data.map((e) => e.newGross.ctc),
+                "#0ea16a",
+              ),
+            ],
+          },
+          options: { ...cOpts, barPercentage: 0.6, categoryPercentage: 0.65 },
+        });
+
+        if (c3) c3.destroy();
+        c3 = new Chart(document.getElementById("chart3"), {
+          type: "bar",
+          data: {
+            labels: L,
+            datasets: [
+              ds(
+                "Current",
+                data.map((e) => e.cur.take),
+                "#e5e7eb",
+              ),
+              ds(
+                "New CTC",
+                data.map((e) => e.newCtc.take),
+                "#3b6ef5",
+              ),
+              ds(
+                "New Gross",
+                data.map((e) => e.newGross.take),
+                "#0ea16a",
+              ),
+            ],
+          },
+          options: { ...cOpts, barPercentage: 0.6, categoryPercentage: 0.65 },
+        });
+      }
+
+      /* ── WHICH STRUCTURE WINS ── with overall verdict banner */
+      function renderWins(data) {
+        if (!data.length) return;
+
+        const cTH = data.reduce((a, e) => a + e.newCtc.take, 0),
+          gTH = data.reduce((a, e) => a + e.newGross.take, 0);
+        const cCTC = data.reduce((a, e) => a + e.newCtc.ctc, 0),
+          gCTC = data.reduce((a, e) => a + e.newGross.ctc, 0);
+        const cM = data.reduce((a, e) => a + e.newCtc.monthly, 0),
+          gM = data.reduce((a, e) => a + e.newGross.monthly, 0);
+        const curM = data.reduce((a, e) => a + e.cur.monthly, 0);
+
+        // Score: for each metric, which is better?
+        let ctcScore = 0,
+          grsScore = 0;
+        if (cTH > gTH) ctcScore++;
+        else if (gTH > cTH) grsScore++;
+        if (cCTC < gCTC) ctcScore++;
+        else if (gCTC < cCTC) grsScore++; // lower CTC = better for employer
+        if (cM > gM) ctcScore++;
+        else if (gM > cM) grsScore++;
+        if (cM - curM > gM - curM) ctcScore++;
+        else if (gM - curM > cM - curM) grsScore++;
+
+        // Overall winner
+        const ovBanner = document.getElementById("overallVerdict");
+        const ovIcon = document.getElementById("ovIcon");
+        const ovMain = document.getElementById("ovMain");
+        const ovSub = document.getElementById("ovSub");
+        ovBanner.style.display = "flex";
+
+        const isSingle = data.length === 1;
+        const name = isSingle ? data[0].name : "Overall";
+
+        if (ctcScore > grsScore) {
+          ovIcon.className = "ov-icon ctc";
+          ovIcon.textContent = "🏆";
+          ovMain.className = "ov-text-main ctc";
+          ovMain.textContent = "New as per CTC is the Better Structure";
+          const ctcAvg = isSingle ? fmt(cTH) : fmtK(cTH);
+          ovSub.textContent =
+            name +
+            " gets higher take home (" +
+            ctcAvg +
+            " total) with CTC-based structure. Wins " +
+            ctcScore +
+            " out of 4 criteria vs Gross structure's " +
+            grsScore +
+            ".";
+        } else if (grsScore > ctcScore) {
+          ovIcon.className = "ov-icon grs";
+          ovIcon.textContent = "🏆";
+          ovMain.className = "ov-text-main grs";
+          ovMain.textContent = "New as per Gross is the Better Structure";
+          const grsAvg = isSingle ? fmt(gTH) : fmtK(gTH);
+          ovSub.textContent =
+            name +
+            " gets higher take home (" +
+            grsAvg +
+            " total) with Gross-based structure. Wins " +
+            grsScore +
+            " out of 4 criteria vs CTC structure's " +
+            ctcScore +
+            ".";
+        } else {
+          ovIcon.className = "ov-icon tie";
+          ovIcon.textContent = "⚖️";
+          ovMain.className = "ov-text-main tie";
+          ovMain.textContent = "Both Structures are Equally Good";
+          ovSub.textContent = `Both New CTC and New Gross result in the same outcome across all criteria for ${name}.`;
+        }
+
+        const w = (a, b, cl, gl) =>
+          a > b
+            ? { cls: "ctc", lbl: cl }
+            : a < b
+              ? { cls: "grs", lbl: gl }
+              : { cls: "tie", lbl: "Tied" };
+        const items = [
+          {
+            label: "Highest Take Home",
+            ...w(cTH, gTH, "New CTC", "New Gross"),
+            rows: [
+              { k: "New CTC", v: fmtK(cTH), c: "ctc" },
+              { k: "New Gross", v: fmtK(gTH), c: "grs" },
+            ],
+            tip: "Employees receive more money in hand.",
+          },
+          {
+            label: "Lowest CTC Cost",
+            ...w(gCTC, cCTC, "New Gross", "New CTC"),
+            rows: [
+              { k: "New CTC", v: fmtK(cCTC), c: "ctc" },
+              { k: "New Gross", v: fmtK(gCTC), c: "grs" },
+            ],
+            tip: "Company will have a lower total cost.",
+          },
+          {
+            label: "Best Monthly Payout",
+            ...w(cM, gM, "New CTC", "New Gross"),
+            rows: [
+              { k: "New CTC", v: fmtK(cM), c: "ctc" },
+              { k: "New Gross", v: fmtK(gM), c: "grs" },
+            ],
+            tip: "Employees receive the best monthly payout.",
+          },
+          {
+            label: "Gain vs Current",
+            ...w(cM - curM, gM - curM, "New CTC", "New Gross"),
+            rows: [
+              {
+                k: "New CTC",
+                v: (cM >= curM ? "+" : "") + fmtK(cM - curM),
+                c: "ctc",
+              },
+              {
+                k: "New Gross",
+                v: (gM >= curM ? "+" : "") + fmtK(gM - curM),
+                c: "grs",
+              },
+            ],
+            tip: "Comparison with current salary.",
+          },
+        ];
+
+        document.getElementById("winsGrid").innerHTML = items
+          .map(
+            (m) => `
+    <div class="win-card">
+      <div class="win-card-label">${m.label}</div>
+      <div class="win-card-winner ${m.cls}">${m.lbl}</div>
+      <div style="font-size:11px;color:#9199a8;margin-bottom:8px;">${m.tip}</div>
+      <div class="win-card-vals">
+        ${m.rows.map((r) => `<div class="win-val-row"><span class="wk">${r.k}</span><span class="wv ${r.c}">${r.v}</span></div>`).join("")}
+      </div>
+    </div>`,
+          )
+          .join("");
+      }
+
+      /* ── SHOW DETAIL IN LEFT PANEL ── */
+      function showDetailPanel(e) {
+        const r = (k, v, cls = "") =>
+          `<div class="drow"><span class="dk">${k}</span><span class="dv ${cls}">${fmt(v)}</span></div>`;
+        document.getElementById("detailName").textContent = e.name;
+        document.getElementById("detailBody").innerHTML = `
+    <div class="detail-col"><div class="detail-col-title cur">Current</div>${r("CTC", e.cur.ctc)}${r("Gross", e.cur.gross)}${r("Take Home", e.cur.take)}${r("Monthly", e.cur.monthly)}</div>
+    <div class="detail-col"><div class="detail-col-title ctc">New — As per CTC</div>${r("CTC", e.newCtc.ctc, "c-ctc")}${r("Gross", e.newCtc.gross, "c-ctc")}${r("Take Home", e.newCtc.take, "c-ctc")}${r("Monthly", e.newCtc.monthly, "c-ctc")}</div>
+    <div class="detail-col"><div class="detail-col-title grs">New — As per Gross</div>${r("CTC", e.newGross.ctc, "c-grs")}${r("Gross", e.newGross.gross, "c-grs")}${r("Take Home", e.newGross.take, "c-grs")}${r("Monthly", e.newGross.monthly, "c-grs")}</div>`;
+        const vEl = document.getElementById("detailVerdict");
+        const d = e.newCtc.take - e.newGross.take;
+        if (d > 0) {
+          vEl.className = "verdict ctc-w";
+          vEl.textContent = `✦ New CTC gives ₹${Math.abs(d).toLocaleString("en-IN")} more take home — CTC structure is better for ${e.name}.`;
+        } else if (d < 0) {
+          vEl.className = "verdict grs-w";
+          vEl.textContent = `✦ New Gross gives ₹${Math.abs(d).toLocaleString("en-IN")} more take home — Gross structure is better for ${e.name}.`;
+        } else {
+          vEl.className = "verdict tied";
+          vEl.textContent = `✦ Both structures give the same take home for ${e.name}.`;
+        }
+        // Toggle left panel: hide table, show detail
+        document.getElementById("tableView").style.display = "none";
+        document.getElementById("detailView").style.display = "block";
+      }
+
+      function closeDetail() {
+        document.getElementById("tableView").style.display = "block";
+        document.getElementById("detailView").style.display = "none";
+      }
+
+      function setStatus(msg, live) {
+        document.getElementById("statusMsg").textContent = msg;
+        document.getElementById("dot").className =
+          "dot" + (live ? " live" : "");
+      }
+    </script>
+  </body>
+</html>
