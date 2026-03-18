@@ -697,7 +697,8 @@
         c2,
         c3;
       const fmt = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
-      const fmtK = (n) => "₹" + (Number(n || 0) / 1000).toFixed(1) + "K";
+      // const fmtK = (n) => "₹" + (Number(n || 0) / 1000).toFixed(1) + "K";
+      const fmtK = (n) => "₹" + Number(n || 0).toLocaleString("en-IN");
 
       /* ── DEMO DATA ── */
       function loadDemo() {
